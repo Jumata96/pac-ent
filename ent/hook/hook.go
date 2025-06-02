@@ -9,6 +9,66 @@ import (
 	"github.com/jumata96/pac-ent/ent"
 )
 
+// The AsistenciaFunc type is an adapter to allow the use of ordinary
+// function as Asistencia mutator.
+type AsistenciaFunc func(context.Context, *ent.AsistenciaMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AsistenciaFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AsistenciaMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AsistenciaMutation", m)
+}
+
+// The ClienteFunc type is an adapter to allow the use of ordinary
+// function as Cliente mutator.
+type ClienteFunc func(context.Context, *ent.ClienteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ClienteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ClienteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ClienteMutation", m)
+}
+
+// The EntrenadorFunc type is an adapter to allow the use of ordinary
+// function as Entrenador mutator.
+type EntrenadorFunc func(context.Context, *ent.EntrenadorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EntrenadorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EntrenadorMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EntrenadorMutation", m)
+}
+
+// The MembresiaFunc type is an adapter to allow the use of ordinary
+// function as Membresia mutator.
+type MembresiaFunc func(context.Context, *ent.MembresiaMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MembresiaFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MembresiaMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MembresiaMutation", m)
+}
+
+// The RutinaFunc type is an adapter to allow the use of ordinary
+// function as Rutina mutator.
+type RutinaFunc func(context.Context, *ent.RutinaMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RutinaFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RutinaMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RutinaMutation", m)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)

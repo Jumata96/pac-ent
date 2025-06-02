@@ -12,6 +12,11 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/jumata96/pac-ent/ent/asistencia"
+	"github.com/jumata96/pac-ent/ent/cliente"
+	"github.com/jumata96/pac-ent/ent/entrenador"
+	"github.com/jumata96/pac-ent/ent/membresia"
+	"github.com/jumata96/pac-ent/ent/rutina"
 	"github.com/jumata96/pac-ent/ent/user"
 )
 
@@ -73,7 +78,12 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			user.Table: user.ValidColumn,
+			asistencia.Table: asistencia.ValidColumn,
+			cliente.Table:    cliente.ValidColumn,
+			entrenador.Table: entrenador.ValidColumn,
+			membresia.Table:  membresia.ValidColumn,
+			rutina.Table:     rutina.ValidColumn,
+			user.Table:       user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

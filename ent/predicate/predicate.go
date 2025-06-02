@@ -6,5 +6,20 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Asistencia is the predicate function for asistencia builders.
+type Asistencia func(*sql.Selector)
+
+// Cliente is the predicate function for cliente builders.
+type Cliente func(*sql.Selector)
+
+// Entrenador is the predicate function for entrenador builders.
+type Entrenador func(*sql.Selector)
+
+// Membresia is the predicate function for membresia builders.
+type Membresia func(*sql.Selector)
+
+// Rutina is the predicate function for rutina builders.
+type Rutina func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

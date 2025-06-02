@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	// "github.com/tuusuario/pac-ent/ent" // Asegúrate de que esto coincida con tu módulo
+	// "github.com/jumata96/pac-ent/ent" // Asegúrate de que esto coincida con tu módulo
 	"pac-ent/ent"
 
 	_ "github.com/mattn/go-sqlite3"

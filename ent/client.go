@@ -14,6 +14,11 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"github.com/jumata96/pac-ent/ent/asistencia"
+	"github.com/jumata96/pac-ent/ent/cliente"
+	"github.com/jumata96/pac-ent/ent/entrenador"
+	"github.com/jumata96/pac-ent/ent/membresia"
+	"github.com/jumata96/pac-ent/ent/rutina"
 	"github.com/jumata96/pac-ent/ent/user"
 )
 
@@ -22,6 +27,16 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Asistencia is the client for interacting with the Asistencia builders.
+	Asistencia *AsistenciaClient
+	// Cliente is the client for interacting with the Cliente builders.
+	Cliente *ClienteClient
+	// Entrenador is the client for interacting with the Entrenador builders.
+	Entrenador *EntrenadorClient
+	// Membresia is the client for interacting with the Membresia builders.
+	Membresia *MembresiaClient
+	// Rutina is the client for interacting with the Rutina builders.
+	Rutina *RutinaClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -35,6 +50,11 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Asistencia = NewAsistenciaClient(c.config)
+	c.Cliente = NewClienteClient(c.config)
+	c.Entrenador = NewEntrenadorClient(c.config)
+	c.Membresia = NewMembresiaClient(c.config)
+	c.Rutina = NewRutinaClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -126,9 +146,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		User:   NewUserClient(cfg),
+		ctx:        ctx,
+		config:     cfg,
+		Asistencia: NewAsistenciaClient(cfg),
+		Cliente:    NewClienteClient(cfg),
+		Entrenador: NewEntrenadorClient(cfg),
+		Membresia:  NewMembresiaClient(cfg),
+		Rutina:     NewRutinaClient(cfg),
+		User:       NewUserClient(cfg),
 	}, nil
 }
 
@@ -146,16 +171,21 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		User:   NewUserClient(cfg),
+		ctx:        ctx,
+		config:     cfg,
+		Asistencia: NewAsistenciaClient(cfg),
+		Cliente:    NewClienteClient(cfg),
+		Entrenador: NewEntrenadorClient(cfg),
+		Membresia:  NewMembresiaClient(cfg),
+		Rutina:     NewRutinaClient(cfg),
+		User:       NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		User.
+//		Asistencia.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -177,22 +207,705 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.User.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.Asistencia, c.Cliente, c.Entrenador, c.Membresia, c.Rutina, c.User,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.User.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.Asistencia, c.Cliente, c.Entrenador, c.Membresia, c.Rutina, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *AsistenciaMutation:
+		return c.Asistencia.mutate(ctx, m)
+	case *ClienteMutation:
+		return c.Cliente.mutate(ctx, m)
+	case *EntrenadorMutation:
+		return c.Entrenador.mutate(ctx, m)
+	case *MembresiaMutation:
+		return c.Membresia.mutate(ctx, m)
+	case *RutinaMutation:
+		return c.Rutina.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// AsistenciaClient is a client for the Asistencia schema.
+type AsistenciaClient struct {
+	config
+}
+
+// NewAsistenciaClient returns a client for the Asistencia from the given config.
+func NewAsistenciaClient(c config) *AsistenciaClient {
+	return &AsistenciaClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `asistencia.Hooks(f(g(h())))`.
+func (c *AsistenciaClient) Use(hooks ...Hook) {
+	c.hooks.Asistencia = append(c.hooks.Asistencia, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `asistencia.Intercept(f(g(h())))`.
+func (c *AsistenciaClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Asistencia = append(c.inters.Asistencia, interceptors...)
+}
+
+// Create returns a builder for creating a Asistencia entity.
+func (c *AsistenciaClient) Create() *AsistenciaCreate {
+	mutation := newAsistenciaMutation(c.config, OpCreate)
+	return &AsistenciaCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Asistencia entities.
+func (c *AsistenciaClient) CreateBulk(builders ...*AsistenciaCreate) *AsistenciaCreateBulk {
+	return &AsistenciaCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AsistenciaClient) MapCreateBulk(slice any, setFunc func(*AsistenciaCreate, int)) *AsistenciaCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AsistenciaCreateBulk{err: fmt.Errorf("calling to AsistenciaClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AsistenciaCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AsistenciaCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Asistencia.
+func (c *AsistenciaClient) Update() *AsistenciaUpdate {
+	mutation := newAsistenciaMutation(c.config, OpUpdate)
+	return &AsistenciaUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AsistenciaClient) UpdateOne(a *Asistencia) *AsistenciaUpdateOne {
+	mutation := newAsistenciaMutation(c.config, OpUpdateOne, withAsistencia(a))
+	return &AsistenciaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AsistenciaClient) UpdateOneID(id int) *AsistenciaUpdateOne {
+	mutation := newAsistenciaMutation(c.config, OpUpdateOne, withAsistenciaID(id))
+	return &AsistenciaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Asistencia.
+func (c *AsistenciaClient) Delete() *AsistenciaDelete {
+	mutation := newAsistenciaMutation(c.config, OpDelete)
+	return &AsistenciaDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AsistenciaClient) DeleteOne(a *Asistencia) *AsistenciaDeleteOne {
+	return c.DeleteOneID(a.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AsistenciaClient) DeleteOneID(id int) *AsistenciaDeleteOne {
+	builder := c.Delete().Where(asistencia.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AsistenciaDeleteOne{builder}
+}
+
+// Query returns a query builder for Asistencia.
+func (c *AsistenciaClient) Query() *AsistenciaQuery {
+	return &AsistenciaQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAsistencia},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Asistencia entity by its id.
+func (c *AsistenciaClient) Get(ctx context.Context, id int) (*Asistencia, error) {
+	return c.Query().Where(asistencia.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AsistenciaClient) GetX(ctx context.Context, id int) *Asistencia {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AsistenciaClient) Hooks() []Hook {
+	return c.hooks.Asistencia
+}
+
+// Interceptors returns the client interceptors.
+func (c *AsistenciaClient) Interceptors() []Interceptor {
+	return c.inters.Asistencia
+}
+
+func (c *AsistenciaClient) mutate(ctx context.Context, m *AsistenciaMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AsistenciaCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AsistenciaUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AsistenciaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AsistenciaDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Asistencia mutation op: %q", m.Op())
+	}
+}
+
+// ClienteClient is a client for the Cliente schema.
+type ClienteClient struct {
+	config
+}
+
+// NewClienteClient returns a client for the Cliente from the given config.
+func NewClienteClient(c config) *ClienteClient {
+	return &ClienteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cliente.Hooks(f(g(h())))`.
+func (c *ClienteClient) Use(hooks ...Hook) {
+	c.hooks.Cliente = append(c.hooks.Cliente, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cliente.Intercept(f(g(h())))`.
+func (c *ClienteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Cliente = append(c.inters.Cliente, interceptors...)
+}
+
+// Create returns a builder for creating a Cliente entity.
+func (c *ClienteClient) Create() *ClienteCreate {
+	mutation := newClienteMutation(c.config, OpCreate)
+	return &ClienteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Cliente entities.
+func (c *ClienteClient) CreateBulk(builders ...*ClienteCreate) *ClienteCreateBulk {
+	return &ClienteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ClienteClient) MapCreateBulk(slice any, setFunc func(*ClienteCreate, int)) *ClienteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ClienteCreateBulk{err: fmt.Errorf("calling to ClienteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ClienteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ClienteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Cliente.
+func (c *ClienteClient) Update() *ClienteUpdate {
+	mutation := newClienteMutation(c.config, OpUpdate)
+	return &ClienteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ClienteClient) UpdateOne(cl *Cliente) *ClienteUpdateOne {
+	mutation := newClienteMutation(c.config, OpUpdateOne, withCliente(cl))
+	return &ClienteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ClienteClient) UpdateOneID(id int) *ClienteUpdateOne {
+	mutation := newClienteMutation(c.config, OpUpdateOne, withClienteID(id))
+	return &ClienteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Cliente.
+func (c *ClienteClient) Delete() *ClienteDelete {
+	mutation := newClienteMutation(c.config, OpDelete)
+	return &ClienteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ClienteClient) DeleteOne(cl *Cliente) *ClienteDeleteOne {
+	return c.DeleteOneID(cl.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ClienteClient) DeleteOneID(id int) *ClienteDeleteOne {
+	builder := c.Delete().Where(cliente.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ClienteDeleteOne{builder}
+}
+
+// Query returns a query builder for Cliente.
+func (c *ClienteClient) Query() *ClienteQuery {
+	return &ClienteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCliente},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Cliente entity by its id.
+func (c *ClienteClient) Get(ctx context.Context, id int) (*Cliente, error) {
+	return c.Query().Where(cliente.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ClienteClient) GetX(ctx context.Context, id int) *Cliente {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ClienteClient) Hooks() []Hook {
+	return c.hooks.Cliente
+}
+
+// Interceptors returns the client interceptors.
+func (c *ClienteClient) Interceptors() []Interceptor {
+	return c.inters.Cliente
+}
+
+func (c *ClienteClient) mutate(ctx context.Context, m *ClienteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ClienteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ClienteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ClienteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ClienteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Cliente mutation op: %q", m.Op())
+	}
+}
+
+// EntrenadorClient is a client for the Entrenador schema.
+type EntrenadorClient struct {
+	config
+}
+
+// NewEntrenadorClient returns a client for the Entrenador from the given config.
+func NewEntrenadorClient(c config) *EntrenadorClient {
+	return &EntrenadorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `entrenador.Hooks(f(g(h())))`.
+func (c *EntrenadorClient) Use(hooks ...Hook) {
+	c.hooks.Entrenador = append(c.hooks.Entrenador, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `entrenador.Intercept(f(g(h())))`.
+func (c *EntrenadorClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Entrenador = append(c.inters.Entrenador, interceptors...)
+}
+
+// Create returns a builder for creating a Entrenador entity.
+func (c *EntrenadorClient) Create() *EntrenadorCreate {
+	mutation := newEntrenadorMutation(c.config, OpCreate)
+	return &EntrenadorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Entrenador entities.
+func (c *EntrenadorClient) CreateBulk(builders ...*EntrenadorCreate) *EntrenadorCreateBulk {
+	return &EntrenadorCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EntrenadorClient) MapCreateBulk(slice any, setFunc func(*EntrenadorCreate, int)) *EntrenadorCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EntrenadorCreateBulk{err: fmt.Errorf("calling to EntrenadorClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EntrenadorCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EntrenadorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Entrenador.
+func (c *EntrenadorClient) Update() *EntrenadorUpdate {
+	mutation := newEntrenadorMutation(c.config, OpUpdate)
+	return &EntrenadorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EntrenadorClient) UpdateOne(e *Entrenador) *EntrenadorUpdateOne {
+	mutation := newEntrenadorMutation(c.config, OpUpdateOne, withEntrenador(e))
+	return &EntrenadorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EntrenadorClient) UpdateOneID(id int) *EntrenadorUpdateOne {
+	mutation := newEntrenadorMutation(c.config, OpUpdateOne, withEntrenadorID(id))
+	return &EntrenadorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Entrenador.
+func (c *EntrenadorClient) Delete() *EntrenadorDelete {
+	mutation := newEntrenadorMutation(c.config, OpDelete)
+	return &EntrenadorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EntrenadorClient) DeleteOne(e *Entrenador) *EntrenadorDeleteOne {
+	return c.DeleteOneID(e.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EntrenadorClient) DeleteOneID(id int) *EntrenadorDeleteOne {
+	builder := c.Delete().Where(entrenador.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EntrenadorDeleteOne{builder}
+}
+
+// Query returns a query builder for Entrenador.
+func (c *EntrenadorClient) Query() *EntrenadorQuery {
+	return &EntrenadorQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEntrenador},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Entrenador entity by its id.
+func (c *EntrenadorClient) Get(ctx context.Context, id int) (*Entrenador, error) {
+	return c.Query().Where(entrenador.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EntrenadorClient) GetX(ctx context.Context, id int) *Entrenador {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *EntrenadorClient) Hooks() []Hook {
+	return c.hooks.Entrenador
+}
+
+// Interceptors returns the client interceptors.
+func (c *EntrenadorClient) Interceptors() []Interceptor {
+	return c.inters.Entrenador
+}
+
+func (c *EntrenadorClient) mutate(ctx context.Context, m *EntrenadorMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EntrenadorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EntrenadorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EntrenadorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EntrenadorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Entrenador mutation op: %q", m.Op())
+	}
+}
+
+// MembresiaClient is a client for the Membresia schema.
+type MembresiaClient struct {
+	config
+}
+
+// NewMembresiaClient returns a client for the Membresia from the given config.
+func NewMembresiaClient(c config) *MembresiaClient {
+	return &MembresiaClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `membresia.Hooks(f(g(h())))`.
+func (c *MembresiaClient) Use(hooks ...Hook) {
+	c.hooks.Membresia = append(c.hooks.Membresia, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `membresia.Intercept(f(g(h())))`.
+func (c *MembresiaClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Membresia = append(c.inters.Membresia, interceptors...)
+}
+
+// Create returns a builder for creating a Membresia entity.
+func (c *MembresiaClient) Create() *MembresiaCreate {
+	mutation := newMembresiaMutation(c.config, OpCreate)
+	return &MembresiaCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Membresia entities.
+func (c *MembresiaClient) CreateBulk(builders ...*MembresiaCreate) *MembresiaCreateBulk {
+	return &MembresiaCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MembresiaClient) MapCreateBulk(slice any, setFunc func(*MembresiaCreate, int)) *MembresiaCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MembresiaCreateBulk{err: fmt.Errorf("calling to MembresiaClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MembresiaCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MembresiaCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Membresia.
+func (c *MembresiaClient) Update() *MembresiaUpdate {
+	mutation := newMembresiaMutation(c.config, OpUpdate)
+	return &MembresiaUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MembresiaClient) UpdateOne(m *Membresia) *MembresiaUpdateOne {
+	mutation := newMembresiaMutation(c.config, OpUpdateOne, withMembresia(m))
+	return &MembresiaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MembresiaClient) UpdateOneID(id int) *MembresiaUpdateOne {
+	mutation := newMembresiaMutation(c.config, OpUpdateOne, withMembresiaID(id))
+	return &MembresiaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Membresia.
+func (c *MembresiaClient) Delete() *MembresiaDelete {
+	mutation := newMembresiaMutation(c.config, OpDelete)
+	return &MembresiaDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MembresiaClient) DeleteOne(m *Membresia) *MembresiaDeleteOne {
+	return c.DeleteOneID(m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MembresiaClient) DeleteOneID(id int) *MembresiaDeleteOne {
+	builder := c.Delete().Where(membresia.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MembresiaDeleteOne{builder}
+}
+
+// Query returns a query builder for Membresia.
+func (c *MembresiaClient) Query() *MembresiaQuery {
+	return &MembresiaQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMembresia},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Membresia entity by its id.
+func (c *MembresiaClient) Get(ctx context.Context, id int) (*Membresia, error) {
+	return c.Query().Where(membresia.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MembresiaClient) GetX(ctx context.Context, id int) *Membresia {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *MembresiaClient) Hooks() []Hook {
+	return c.hooks.Membresia
+}
+
+// Interceptors returns the client interceptors.
+func (c *MembresiaClient) Interceptors() []Interceptor {
+	return c.inters.Membresia
+}
+
+func (c *MembresiaClient) mutate(ctx context.Context, m *MembresiaMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MembresiaCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MembresiaUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MembresiaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MembresiaDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Membresia mutation op: %q", m.Op())
+	}
+}
+
+// RutinaClient is a client for the Rutina schema.
+type RutinaClient struct {
+	config
+}
+
+// NewRutinaClient returns a client for the Rutina from the given config.
+func NewRutinaClient(c config) *RutinaClient {
+	return &RutinaClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rutina.Hooks(f(g(h())))`.
+func (c *RutinaClient) Use(hooks ...Hook) {
+	c.hooks.Rutina = append(c.hooks.Rutina, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rutina.Intercept(f(g(h())))`.
+func (c *RutinaClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Rutina = append(c.inters.Rutina, interceptors...)
+}
+
+// Create returns a builder for creating a Rutina entity.
+func (c *RutinaClient) Create() *RutinaCreate {
+	mutation := newRutinaMutation(c.config, OpCreate)
+	return &RutinaCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Rutina entities.
+func (c *RutinaClient) CreateBulk(builders ...*RutinaCreate) *RutinaCreateBulk {
+	return &RutinaCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RutinaClient) MapCreateBulk(slice any, setFunc func(*RutinaCreate, int)) *RutinaCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RutinaCreateBulk{err: fmt.Errorf("calling to RutinaClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RutinaCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RutinaCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Rutina.
+func (c *RutinaClient) Update() *RutinaUpdate {
+	mutation := newRutinaMutation(c.config, OpUpdate)
+	return &RutinaUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RutinaClient) UpdateOne(r *Rutina) *RutinaUpdateOne {
+	mutation := newRutinaMutation(c.config, OpUpdateOne, withRutina(r))
+	return &RutinaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RutinaClient) UpdateOneID(id int) *RutinaUpdateOne {
+	mutation := newRutinaMutation(c.config, OpUpdateOne, withRutinaID(id))
+	return &RutinaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Rutina.
+func (c *RutinaClient) Delete() *RutinaDelete {
+	mutation := newRutinaMutation(c.config, OpDelete)
+	return &RutinaDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RutinaClient) DeleteOne(r *Rutina) *RutinaDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RutinaClient) DeleteOneID(id int) *RutinaDeleteOne {
+	builder := c.Delete().Where(rutina.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RutinaDeleteOne{builder}
+}
+
+// Query returns a query builder for Rutina.
+func (c *RutinaClient) Query() *RutinaQuery {
+	return &RutinaQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRutina},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Rutina entity by its id.
+func (c *RutinaClient) Get(ctx context.Context, id int) (*Rutina, error) {
+	return c.Query().Where(rutina.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RutinaClient) GetX(ctx context.Context, id int) *Rutina {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RutinaClient) Hooks() []Hook {
+	return c.hooks.Rutina
+}
+
+// Interceptors returns the client interceptors.
+func (c *RutinaClient) Interceptors() []Interceptor {
+	return c.inters.Rutina
+}
+
+func (c *RutinaClient) mutate(ctx context.Context, m *RutinaMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RutinaCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RutinaUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RutinaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RutinaDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Rutina mutation op: %q", m.Op())
 	}
 }
 
@@ -332,9 +1045,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		User []ent.Hook
+		Asistencia, Cliente, Entrenador, Membresia, Rutina, User []ent.Hook
 	}
 	inters struct {
-		User []ent.Interceptor
+		Asistencia, Cliente, Entrenador, Membresia, Rutina, User []ent.Interceptor
 	}
 )
