@@ -3,7 +3,7 @@
 Este proyecto es una API REST desarrollada en Go utilizando el framework **[Ent](https://entgo.io/)** y conectada a una base de datos **PostgreSQL**.
 Su propósito es permitir el manejo de clientes, rutinas, membresías y entrenadores de un gimnasio.
 
-📦 Estructura del proyecto 
+## 📦 Estructura del proyecto 
     pac-ent/
     │
     ├── cmd/pac-ent/main.go # Punto de entrada de la aplicación
